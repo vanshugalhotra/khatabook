@@ -5,6 +5,7 @@ import subprocess
 import itertools
 import os
 import datetime
+from collections import defaultdict
 try:
     import mysql.connector
     import pandas
@@ -90,9 +91,9 @@ class KhataBook:
         cursor.execute(bd_table_command)
 
         """_______________________________________functions_________________________"""
-        def check_phone_number(phone_number, region):
-            num = phonenumbers.parse(phone_number, region)
-            phonenumbers.is_valid_number(num)
+        # def check_phone_number(phone_number, region):
+        #     num = phonenumbers.parse(phone_number, region)
+        #     phonenumbers.is_valid_number(num)
 
         def date_amount_formatting():
             select_command1 = "SELECT amount, date FROM records"
@@ -101,19 +102,15 @@ class KhataBook:
             num_list = list(itertools.chain(*record_tuple11))
             connection.commit()
 
-            keys = num_list[0:len(num_list)+1:2]   # fetching keys for dict using slicing(every odd value)
-            values = num_list[1:len(num_list)+1:2]  # fetching values for dict using slicing(every even value)
-            num_dict = dict(zip(keys, values))      # finally created a dictionary using key and values
-            list_nd_items = list(num_dict.items())
-            final_dict_ = {}
+            keys_ = num_list[0:len(num_list)+1:2]   # fetching keys for dict using slicing(every odd value)
+            values_ = num_list[1:len(num_list)+1:2]  # fetching values for dict using slicing(every even value)
+            global num_dict
+            num_dict = defaultdict(list)
+            # creation of dictionary like this {'2020-05-15': [5000], '2020-12-28': [2000, 10000]}
+            for value, key in zip(keys_, values_):
+                num_dict[key].append(value)
 
-            for key, value in list_nd_items:      # combining keys of same values
-                if value not in final_dict_:
-                    final_dict_[value] = [key]
-                else:
-                    final_dict_[value].append(key)
-            # using for loop in dict to sum up the values
-
+            final_dict_ = dict(num_dict)
             global dict_we_want   # will use it to create ts graph
             dict_we_want = {key: sum(values) for key, values in final_dict_.items()}  # sum up all values of same key
             list_of_time = list(dict_we_want.keys())
@@ -288,16 +285,19 @@ class KhataBook:
             # here we go!
             labels = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
                       'August', 'September', 'October', 'November', 'December']
+
             sizes = [total_amount_jan, total_amount_feb, total_amount_march, total_amount_april,
                      total_amount_may, total_amount_june, total_amount_july, total_amount_aug,
                      total_amount_sep, total_amount_oct, total_amount_nov, total_amount_dec]
-            explode = (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
-            # explode = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            print(sizes)
+            # explode = (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
+            explode = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            explode[cur_month-1] = 0.1
             # explode = (0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2)
-
+            print(total_amount_sep)
             fig1, ax1 = plt.subplots()
             ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
-                    shadow=True, startangle=90)
+                    shadow=None, startangle=90)
             ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 
             plt.show()
