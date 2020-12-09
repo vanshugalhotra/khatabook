@@ -5,6 +5,7 @@ import subprocess
 import itertools
 import os
 import datetime
+import webbrowser
 from collections import defaultdict
 try:
     import mysql.connector
@@ -94,6 +95,48 @@ class KhataBook:
         # def check_phone_number(phone_number, region):
         #     num = phonenumbers.parse(phone_number, region)
         #     phonenumbers.is_valid_number(num)
+
+        def au(_event=None):
+            global screen1
+            screen1 = Toplevel(root)
+            screen1.title("Information About Developer")
+            screen1.geometry("400x380")
+            colo = 'white'
+            screen1.configure(bg=colo)
+
+            def git():
+                webbrowser.open('https://github.com/vanshugalhotra3332')
+
+            def instagram():
+                webbrowser.open('https://instagram.com/vanshu_galhotra')
+
+            lbl1 = Label(screen1, text="Developed by :- Vanshu Galhotra ", font=('helvetica', 15, 'bold'),
+                         bd=7, bg='white')
+            lbl1.grid(row=0, column=0)
+            lbl2 = Label(screen1, text="Email:- vanshugalhotra3332@gmail.com", font=('helvetica', 15, 'bold'),
+                         bd=7, bg='white')
+            lbl2.grid(row=1, column=0)
+            lbl3 = Button(screen1, text="Instagram :-  vanshu_galhotra", font=('helvetica', 17, 'bold'), bd=7,
+                          bg='white', overrelief=RIDGE, command=instagram)
+            lbl3.grid(row=2, column=0)
+            lblg = Button(screen1, text="Github:- vanshugalhotra3332", font=('helvetica', 17, 'bold'), bd=7,
+                          bg='white', overrelief=RIDGE, command=git)
+            lblg.grid(row=3, column=0)
+            lble = Label(screen1, text="", font=('helvetica', 7, 'bold'), bd=2,
+                         bg=colo)
+            lble.grid(row=4, column=0)
+            lbl_v = Label(screen1, text="© Copyright : Vanshu Galhotra", font=('helvetica', 9, 'bold'),
+                          bd=2, bg=colo)
+            lbl_v.grid(row=5, column=0)
+            btne = Button(screen1, padx=18, bd=7, font=('helvetica', 16, 'bold'), width=7, text="Exit",
+                          bg='gold2', overrelief=RIDGE, command=lambda screen=screen1: exit_system(screen))
+            btne.grid(row=6, column=0)
+            lblp = Label(screen1, text="Coded in python", font=('helvetica', 9, 'bold'),
+                         bd=2, bg=colo)
+            lblp.grid(row=7, column=0)
+
+        def git_repo():
+            webbrowser.open('https://github.com/vanshugalhotra3332/khatabook')
 
         def date_amount_formatting():
             select_command1 = "SELECT amount, date FROM records"
@@ -376,6 +419,101 @@ class KhataBook:
             plt.title(f'Credit Analysis for {cur_year}', bbox={'facecolor': 'chartreuse', 'pad': 1})
             plt.show()
 
+        def add_bad_debt():
+            select_command = "SELECT name FROM records"
+            cursor.execute(select_command)
+            record_tuple = cursor.fetchall()
+            record_list = list(itertools.chain(*record_tuple))
+
+            def store_bd(baddebt_name):
+                command = f"SELECT * from records where name = '{baddebt_name}'"
+                cursor.execute(command)
+                name_tuple = cursor.fetchall()
+                name_list = list(itertools.chain(*name_tuple))
+                bd_name = name_list[0]   # name
+                bd_address = name_list[1]   # address
+                bd_phone = name_list[2]    # phone
+                bd_amount = name_list[3]    # amount
+                bd_date = name_list[4]    # date
+
+                insert_command = "INSERT INTO bad_debts(name,address,phone,amount,date) VALUES(%s,%s,%s,%s,%s)"
+                values = (bd_name, bd_address, bd_phone, bd_amount, bd_date)
+                cursor.execute(insert_command, values)
+                delete_command = f"DELETE FROM records WHERE phone= {bd_phone}"  # phone is our primary key
+                cursor.execute(delete_command)
+                connection.commit()
+                tkinter.messagebox.showinfo('Success!', f'Record "{bd_name}" added to Bad Debts')
+
+            for names in record_list:
+                bd_add.add_command(label=f'{names}', command=lambda baddebt_name=names: store_bd(baddebt_name))
+
+        def rec_baddebt():
+            select_command = f"SELECT name from bad_debts"
+            cursor.execute(select_command)
+            record_tuple = cursor.fetchall()
+            record_list = list(itertools.chain(*record_tuple))
+
+            def store(baddebt_name):
+                command = f"SELECT * from bad_debts where name = '{baddebt_name}'"
+                cursor.execute(command)
+                name_tuple = cursor.fetchall()
+                name_list = list(itertools.chain(*name_tuple))
+                bd_name = name_list[0]   # name
+                bd_address = name_list[1]   # address
+                bd_phone = name_list[2]    # phone
+                bd_amount = name_list[3]    # amount
+                bd_date = name_list[4]    # date
+
+                insert_command = "INSERT INTO records(name,address,phone,amount,date) VALUES(%s,%s,%s,%s,%s)"
+                values = (bd_name, bd_address, bd_phone, bd_amount, bd_date)
+                cursor.execute(insert_command, values)
+                del_command = f"DELETE from bad_debts where phone = {bd_phone}"
+                cursor.execute(del_command)
+                connection.commit()
+
+                tkinter.messagebox.showinfo('Success!', f'Record "{bd_name}" Removed From Bad Debts')
+
+            for names in record_list:
+                bd_rec.add_command(label=f'{names}', command=lambda baddebt_name=names: store(baddebt_name))
+
+        def ir_credit():
+            command_sum = "SELECT amount from bad_debts"  # alternate sum(amount)
+            cursor.execute(command_sum)
+            amt_tuple = cursor.fetchall()
+            amt_list_ir = list(itertools.chain(*amt_tuple))
+            ir_credit_amount = sum(amt_list_ir)
+            tkinter.messagebox.showinfo('Irrecoverable Amount', f'Irrecoverable Amount is {ir_credit_amount}')
+            print(f'Irrecoverable Amount is {ir_credit_amount}')
+
+        def rec_credit():
+            command_sum_ = "SELECT amount from records"
+            cursor.execute(command_sum_)
+            amt_tuple_ = cursor.fetchall()
+            amt_list_rec = list(itertools.chain(*amt_tuple_))
+            rec_credit_amount = sum(amt_list_rec)
+            tkinter.messagebox.showinfo('Recoverable Amount', f'Recoverable Amount is {rec_credit_amount}')
+            print(f'Recoverable Amount is {rec_credit_amount}')
+
+        def total_credit():
+            # irrecoverable amount calculating here to use it to calculate total amount
+            command_sum = "SELECT amount from bad_debts"
+            cursor.execute(command_sum)
+            amt_tuple = cursor.fetchall()
+            amt_list_ir = list(itertools.chain(*amt_tuple))
+            ir_credit_amount = sum(amt_list_ir)
+
+            # recoverable amount calculating here to use it to calculate total amount
+            command_sum = "SELECT amount from records"
+            cursor.execute(command_sum)
+            amt_tuple = cursor.fetchall()
+            amt_list_rec = list(itertools.chain(*amt_tuple))
+            rec_credit_amount = sum(amt_list_rec)
+
+            # total amount = irrecoverable + recoverable
+            total_credit_amount = ir_credit_amount + rec_credit_amount
+            tkinter.messagebox.showinfo('Total Credit Amount', f'Total Credit Amount is {total_credit_amount}')
+            print(f'Total Credit Amount is {total_credit_amount}')
+
         def records(_event=None):
             rec_screen = Toplevel(root)
             rec_screen.title("Records")
@@ -467,6 +605,7 @@ class KhataBook:
                 cursor.execute(update_command)
                 connection.commit()
                 tkinter.messagebox.showinfo("Success!", "Amount Updated Successfully!")
+                up_screen.destroy()
 
             def amt_rec():
                 select_command__ = f"SELECT phone FROM records WHERE name='{up_name}'"
@@ -483,6 +622,7 @@ class KhataBook:
                 cursor.execute(update_command)
                 connection.commit()
                 tkinter.messagebox.showinfo("Success!", "Amount Updated Successfully!")
+                up_screen.destroy()
 
             select_command = f"SELECT * FROM records WHERE name='{up_name}'"
             cursor.execute(select_command)
@@ -507,7 +647,7 @@ class KhataBook:
                 name_ = list(dict_values.keys())[0] + ' : ' + record_list[0]
                 address_ = list(dict_values.keys())[1] + ' : ' + record_list[1]
                 phone_ = list(dict_values.keys())[2] + ' : ' + record_list[2]
-                amount1 = list(dict_values.keys())[3] + ' : ' + record_list[3]
+                amount1 = list(dict_values.keys())[3] + ' : ' + str(record_list[3])
                 date__ = list(dict_values.keys())[4] + ' : ' + record_list[4]
                 value_list = [name_, address_, phone_, amount1, date__]
                 for items in value_list:
@@ -996,17 +1136,19 @@ class KhataBook:
 
         main_menu.add_cascade(label="Tools", menu=tool_sub)     # m2
         tool_sub.add_cascade(label='credit', menu=credit_sub)   # t1
-        credit_sub.add_command(label='Total (Ctrl-Alt-t)')          # t1c1
-        root.bind('<Control-Alt-t>')
-        credit_sub.add_command(label='Irrecoverable')                   # t1c2
-        credit_sub.add_command(label='Recoverable')                 # t1c3
+        credit_sub.add_command(label='Total (Ctrl-Alt-t)', command=total_credit)     # t1c1
+        root.bind('<Control-Alt-t>', total_credit)
+        credit_sub.add_command(label='Irrecoverable', command=ir_credit)         # t1c2
+        credit_sub.add_command(label='Recoverable', command=rec_credit)            # t1c3
         tool_sub.add_cascade(label='Bad debts', menu=baddebt_menu)   # t2
         baddebt_menu.add_cascade(label='Add', menu=bd_add)              # t2b1
+        add_bad_debt()
         baddebt_menu.add_cascade(label='Recoverable', menu=bd_rec)       # t2b2
+        rec_baddebt()
         tool_sub.add_cascade(label='Graph', menu=graph_sub)    # t3
 
         graph_sub.add_cascade(label='Pie chart', menu=pie_sub)                # t3g1
-        pie_sub.add_cascade(label='Month Wise', command=pie_m)                # t3g1
+        pie_sub.add_cascade(label='This year', command=pie_m)                # t3g1
 
         graph_sub.add_cascade(label='Time-Series', menu=hist_sub)      # t3g2
         hist_sub.add_command(label='Last 7 Days', command=show_ts_ls)
@@ -1014,13 +1156,14 @@ class KhataBook:
         hist_sub.add_command(label='Specify*')
 
         graph_sub.add_cascade(label='Bar Graph', menu=bar_sub)                # t3g1
-        bar_sub.add_cascade(label='Month Wise', command=bar_m)
+        bar_sub.add_cascade(label='This Year', command=bar_m)
 
         main_menu.add_cascade(label="Help", menu=sub_menu)
         sub_menu.add_command(label='Information (Ctrl-i)')
         root.bind('<Control-i>')
-        sub_menu.add_command(label="About Us  (Ctrl-u)")
-        root.bind('<Control-u>')
+        sub_menu.add_command(label="About Us  (Ctrl-u)", command=au)
+        root.bind('<Control-u>', au)
+        sub_menu.add_command(label="GitHub Repository", command=git_repo)
 
         """__________________top frame_____________________"""
         self.lbl1 = Label(top, font=('helvetica', 31, 'bold'), text='Khata Book',
