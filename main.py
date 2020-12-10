@@ -59,6 +59,7 @@ class KhataBook:
                   '07': 'July', '08': 'Aug', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dec'}
 
         month_int = ['0', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']  # ignore 0
+        # columns = ['Name', 'Address', 'Phone', 'Amount', 'Date']
         # _______________checking if database exists or need to be created______________________
         connection_ = mysql.connector.connect(
             host=host,
@@ -218,11 +219,18 @@ class KhataBook:
                 list_of_val.append(dict_we_want[items_st])
             y = np.array(list_of_val)
 
-            plt.plot(x, y, '--')
-            plt.xlabel('Days')
-            plt.ylabel('Amount')
-            plt.title('Credit Of Last 7 Days')
-            plt.show()
+            if len(x) > 1:
+                plt.plot(x, y, 'ro', linestyle='solid')
+                plt.xlabel('Days')
+                plt.ylabel('Amount')
+                plt.title('Credit During Last 7 Days')
+                plt.show()
+            else:
+                plt.plot(x, y, 'x')   # separate treatment for entries less than 1
+                plt.xlabel('Days')
+                plt.ylabel('Amount')
+                plt.title('Credit During Last 7 Days')
+                plt.show()
 
         def show_ts_lm():   # last month
             date_amount_formatting()  # calling the function to use its globalized values
@@ -249,7 +257,7 @@ class KhataBook:
             x = np.array(current_month_list)
             y = np.array(list(final_dict_.values()))
             if len(x) > 1:
-                plt.plot(x, y)
+                plt.plot(x, y, 'ro', linestyle='solid')
                 plt.xlabel('Days')
                 plt.ylabel('Amount')
                 plt.title('Credit During This Month')
@@ -413,6 +421,7 @@ class KhataBook:
             sizes = [total_amount_jan, total_amount_feb, total_amount_march, total_amount_april,
                      total_amount_may, total_amount_june, total_amount_july, total_amount_aug,
                      total_amount_sep, total_amount_oct, total_amount_nov, total_amount_dec]
+
             plt.bar(labels, sizes)
             plt.xlabel('Months')
             plt.ylabel('Credit Amount')
@@ -514,7 +523,7 @@ class KhataBook:
             tkinter.messagebox.showinfo('Total Credit Amount', f'Total Credit Amount is {total_credit_amount}')
             print(f'Total Credit Amount is {total_credit_amount}')
 
-        def records(_event=None):
+        def records(table_name):
             rec_screen = Toplevel(root)
             rec_screen.title("Records")
             rec_screen.geometry("1500x600")
@@ -531,13 +540,13 @@ class KhataBook:
                 records_treeview.heading(a, text=a.title())
             records_treeview.grid(row=1, column=0)
 
-            select_command = "SELECT * FROM records"
+            select_command = f"SELECT * FROM {table_name}"
             cursor.execute(select_command)
             record_tuple = cursor.fetchall()
             record_list = list(itertools.chain(*record_tuple))
 
             for names in record_list:
-                select_command1 = f"SELECT * FROM records WHERE name='{names}'"
+                select_command1 = f"SELECT * FROM {table_name} WHERE name='{names}'"
                 cursor.execute(select_command1)
                 record_tuple12 = cursor.fetchall()
                 record_list1 = list(itertools.chain(*record_tuple12))
@@ -699,30 +708,46 @@ class KhataBook:
                 del_name.set("Record does'nt exists")
             del_name.set("")
 
-        def save_xlsx(_event=None):          # Not Working
-            select_command = "SELECT name FROM records"
-            cursor.execute(select_command)
+        def save_xlsx(_event=None):
+            command_ = "SELECT * from records"
+            cursor.execute(command_)
             record_tuple = cursor.fetchall()
             record_list = list(itertools.chain(*record_tuple))
-            for names in record_list:
-                select_command1 = f"SELECT * FROM records WHERE name='{names}'"
-                cursor.execute(select_command1)
-                record_tuple1 = cursor.fetchall()
-                record_list_ = list(itertools.chain(*record_tuple1))
-                keys = ['Name', 'Address', 'Phone', 'Amount', 'Date']
-                global final_dict
-                final_dict = dict(zip(keys, record_list_))
-                global files
-                files = [('Microsoft Excel File', '.xlsx')]
+            slice_name = slice(0, len(record_list), 5)   # slicing all names from list
+            slice_address = slice(1, len(record_list), 5)   # slicing all addresses from list
+            slice_phone = slice(2, len(record_list), 5)   # slicing all phone from list
+            slice_amount = slice(3, len(record_list), 5)   # slicing all amounts from list
+            slice_date = slice(4, len(record_list), 5)   # slicing all dates from list
+
+            name_list = record_list[slice_name]
+            address_list = record_list[slice_address]
+            phone_list = record_list[slice_phone]
+            amount_list = record_list[slice_amount]
+            date_list = record_list[slice_date]
+
+            final_dict = {'Name': name_list,
+                          'Address': address_list,
+                          'Phone': phone_list,
+                          'Amount': amount_list,
+                          'Date': date_list}
+
+            files = [('Microsoft Excel File', '.xlsx')]
             save_path_ = filedialog.asksaveasfilename(filetypes=files, initialdir=cur)
             save_path = str(save_path_) + '.xlsx'
-
-            if save_path:
+            if len(save_path) == 0:
+                pass
+            else:
                 writer = pandas.ExcelWriter(save_path, engine='xlsxwriter')
-                df = pandas.DataFrame(final_dict, index=[0])
+                df = pandas.DataFrame(final_dict, index=None)
                 df.to_excel(writer, sheet_name='Records', index=False)
+                worksheet = writer.sheets['Records']
+                worksheet.set_column('A:A', 25)
+                worksheet.set_column('B:B', 25)
+                worksheet.set_column('C:C', 20)
+                worksheet.set_column('D:D', 20)
+                worksheet.set_column('E:E', 20)
                 writer.save()
-            connection.commit()
+                connection.commit()
 
         def add_finally():
             name = add_name.get()
@@ -1125,9 +1150,10 @@ class KhataBook:
 
         main_menu.add_cascade(label="File", menu=file_sub)  # m1
         file_sub.add_cascade(label="Records", menu=record_sub)  # f1
-        record_sub.add_command(label='All (Ctrl-Alt-a)', command=records)  # f1r1
-        root.bind('<Control-Alt-a>', records)
-        record_sub.add_command(label='Bad debts')      # f1r2
+        record_sub.add_command(label='All (Ctrl-Alt-a)',
+                               command=lambda table_name='records': records(table_name))  # f1r1
+        root.bind('<Control-Alt-a>', lambda table_name='records': records(table_name))
+        record_sub.add_command(label='Bad debts', command=lambda table_name='bad_debts': records(table_name))     # f1r2
         file_sub.add_cascade(label="Save record", menu=save_sub)   # f2
         save_sub.add_command(label='Excel sheet (Ctrl-s)', command=save_xlsx)  # f2r1
         root.bind('<Control-s>', save_xlsx)
