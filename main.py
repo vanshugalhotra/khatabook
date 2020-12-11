@@ -5,6 +5,7 @@ import subprocess
 import itertools
 import os
 import datetime
+import random
 import webbrowser
 from collections import defaultdict
 try:
@@ -35,6 +36,9 @@ class KhataBook:
         self.root.title("Khata book")
         self.root.geometry("800x600+160-90")
         """______________________________________variables______________________________________________"""
+        host = 'localhost'
+        user = 'root'
+        password = 'blc332'
         add_name = StringVar()
         add_address = StringVar()
         add_phone = StringVar()
@@ -43,9 +47,6 @@ class KhataBook:
         del_name = StringVar()
         update_name = StringVar()
         search = StringVar()
-        host = 'localhost'
-        user = 'root'
-        password = 'blc332'
         plus_amt = StringVar()
         minus_amt = StringVar()
         # current working directory
@@ -59,6 +60,8 @@ class KhataBook:
                   '07': 'July', '08': 'Aug', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dec'}
 
         month_int = ['0', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']  # ignore 0
+        all_colors = list(plt.cm.colors.cnames.keys())
+        colors_ = random.choices(all_colors, k=12)
         # columns = ['Name', 'Address', 'Phone', 'Amount', 'Date']
         # _______________checking if database exists or need to be created______________________
         connection_ = mysql.connector.connect(
@@ -139,7 +142,7 @@ class KhataBook:
         def git_repo():
             webbrowser.open('https://github.com/vanshugalhotra3332/khatabook')
 
-        def date_amount_formatting():
+        def date_amount_formatting(particular_year):
             select_command1 = "SELECT amount, date FROM records"
             cursor.execute(select_command1)
             record_tuple11 = cursor.fetchall()
@@ -163,25 +166,16 @@ class KhataBook:
                                  .strftime("%Y-%m-%d"))  # sorts time in ascending order
 
             #  _____________converting sorted time to alphabet months like 2020-12-03 will be 3 dec 2020___________
+            #         _______________________for all year entries_________
             year_list = []  # creating empty lists to store loop variable values later on.
             global month_list
             month_list = []
             day_list = []
 
-            # to ensure month_list only includes month entries of current year
-            index_emp = []
-            sorted_time_cur_only = []
-            for index_cur in range(0, len(sorted_time)):    # appending index at which year is current year
-                if sorted_time[index_cur].startswith(str(cur_year)):
-                    index_emp.append(index_cur)
-
-            for index_cur_ in index_emp:    # appending all current year entries here
-                sorted_time_cur_only.append(sorted_time[index_cur_])
-
             for y in sorted_time:    # storing all years from sorted time to year_list
                 year_list.append(y[0:4])    # using slicing and nothing else
 
-            for m in sorted_time_cur_only:    # storing all months from sorted time to year_list
+            for m in sorted_time:    # storing all months from sorted time to year_list
                 month_list.append(m[5:7])    # using slicing and nothing else
 
             for d in sorted_time:    # storing all days from sorted time to year_list
@@ -195,7 +189,7 @@ class KhataBook:
             day_month_list_alpha = []   # here we gonna store day+month like 3 dec
             # this is list which contains 2 separate lists of days and months_alpha
             day_month_list = [day_list] + [month_list_alpha]  # like [ ['day1', 'day2'], ['mon1','mon2'] ]
-            for index in range(0, len(day_month_list[0])):
+            for index in range(0, len(day_month_list[1])):
                 # index will include values from 0 to len(['day1','day2'])that is 2
                 # now put value of day_month_list[0] and index to understand following.
                 # day_month_list means ['day1', 'day2'] and index will be 0 at first loop
@@ -210,9 +204,176 @@ class KhataBook:
             for index_ in range(0, len(dm_y_list[0])):
                 dmy_list.append(dm_y_list[0][index_] + ' ' + dm_y_list[1][index_])
 
+            # _________________________________entries for particular year__________________________________________
+            index_emp = []
+            global sorted_time_cur_only
+            sorted_time_cur_only = []
+            for index_cur in range(0, len(sorted_time)):    # appending index at which year is current year
+                if sorted_time[index_cur].startswith(str(particular_year)):
+                    index_emp.append(index_cur)
+
+            for index_cur_ in index_emp:    # appending all current year entries here
+                sorted_time_cur_only.append(sorted_time[index_cur_])
+
+            cur_year_list = []
+            global cur_year_month_list
+            cur_year_month_list = []
+            cur_year_day_list = []
+
+            for y1 in sorted_time_cur_only:
+                cur_year_list.append(y1[0:4])
+
+            for m1 in sorted_time_cur_only:
+                cur_year_month_list.append(m1[5:7])
+
+            for d1 in sorted_time_cur_only:
+                cur_year_day_list.append(d1[8:])
+
+            global cur_year_day_month_list_alpha
+            cur_year_month_list_alpha = []
+            for month in cur_year_month_list:    # converting number months to there alpha character like 11 to nov
+                cur_year_month_list_alpha.append(months[month])   # using months dictionary for this declared above
+
+            cur_year_day_month_list_alpha = []   # here we gonna store day+month like 3 dec
+            # this is list which contains 2 separate lists of days and months_alpha
+            cur_year_day_month_list = [cur_year_day_list] + [cur_year_month_list_alpha]
+            for index in range(0, len(cur_year_day_month_list[1])):
+                # explained above
+                cur_year_day_month_list_alpha.append(
+                    cur_year_day_month_list[0][index] + '' + cur_year_day_month_list[1][index])
+
+            # now we gonna concatenate day_month_alpha with year like 30nov 2020
+            cur_year_dmy_list = []  # creating empty list to store values later on
+            cur_year_dm_y_list = [cur_year_day_month_list_alpha] + [cur_year_list]
+            for index_ in range(0, len(cur_year_dm_y_list[0])):
+                cur_year_dmy_list.append(cur_year_dm_y_list[0][index_] + ' ' + cur_year_dm_y_list[1][index_])
+
+        def amount_for_particular_month(month_in_int, year):
+            date_amount_formatting(year)
+            list_of_indexes1 = []
+            pm_month_list = []
+            for indexes in range(0, len(cur_year_month_list)):
+                if cur_year_month_list[indexes] == month_int[month_in_int]:
+                    list_of_indexes1.append(indexes)
+
+            for cur_index in list_of_indexes1:
+                pm_month_list.append(cur_year_day_month_list_alpha[cur_index])
+
+            pm_month_list_ = []
+            # this is for dict values which we gonna use to create y array
+            for cur_index_ in list_of_indexes1:
+                pm_month_list_.append(sorted_time_cur_only[cur_index_])
+
+            values_for_dict = []
+            for items_ in pm_month_list_:
+                values_for_dict.append(dict_we_want[items_])
+            global final_dict_1
+            final_dict_1 = dict(zip(pm_month_list_, values_for_dict))
+            return final_dict_1
+
+        def total_amounts_of_months(specific_year):
+            """Now we have to get all month's date """
+            # _______________________________________for january
+            amount_for_particular_month(1, specific_year)
+            dict_of_values_for_jan = final_dict_1
+            global total_amount_jan
+            total_amount_jan = sum(list(dict_of_values_for_jan.values()))
+            # _______________________________________for february
+            amount_for_particular_month(2, specific_year)
+            dict_of_values_for_feb = final_dict_1
+            global total_amount_feb
+            total_amount_feb = sum(list(dict_of_values_for_feb.values()))
+            # _______________________________________for march
+            amount_for_particular_month(3, specific_year)
+            dict_of_values_for_march = final_dict_1
+            global total_amount_march
+            total_amount_march = sum(list(dict_of_values_for_march.values()))
+            # _______________________________________for april
+            amount_for_particular_month(4, specific_year)
+            dict_of_values_for_april = final_dict_1
+            global total_amount_april
+            total_amount_april = sum(list(dict_of_values_for_april.values()))
+            # _______________________________________for may
+            amount_for_particular_month(5, specific_year)
+            dict_of_values_for_may = final_dict_1
+            global total_amount_may
+            total_amount_may = sum(list(dict_of_values_for_may.values()))
+            # _______________________________________for june
+            amount_for_particular_month(6, specific_year)
+            dict_of_values_for_june = final_dict_1
+            global total_amount_june
+            total_amount_june = sum(list(dict_of_values_for_june.values()))
+            # _______________________________________for july
+            amount_for_particular_month(7, specific_year)
+            dict_of_values_for_july = final_dict_1
+            global total_amount_july
+            total_amount_july = sum(list(dict_of_values_for_july.values()))
+            # _______________________________________for august
+            amount_for_particular_month(8, specific_year)
+            dict_of_values_for_aug = final_dict_1
+            global total_amount_aug
+            total_amount_aug = sum(list(dict_of_values_for_aug.values()))
+            # _______________________________________for september
+            amount_for_particular_month(9, specific_year)
+            dict_of_values_for_sep = final_dict_1
+            global total_amount_sep
+            total_amount_sep = sum(list(dict_of_values_for_sep.values()))
+            # _______________________________________for october
+            amount_for_particular_month(10, specific_year)
+            dict_of_values_for_oct = final_dict_1
+            global total_amount_oct
+            total_amount_oct = sum(list(dict_of_values_for_oct.values()))
+            # _______________________________________for november
+            amount_for_particular_month(11, specific_year)
+            dict_of_values_for_nov = final_dict_1
+            global total_amount_nov
+            total_amount_nov = sum(list(dict_of_values_for_nov.values()))
+            # _______________________________________for december
+            amount_for_particular_month(12, specific_year)
+            dict_of_values_for_dec = final_dict_1
+            global total_amount_dec
+            total_amount_dec = sum(list(dict_of_values_for_dec.values()))
+
+        def pie_m():
+            total_amounts_of_months(cur_year)
+            # here we go!
+            labels = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                      'August', 'September', 'October', 'November', 'December']
+
+            sizes = [total_amount_jan, total_amount_feb, total_amount_march, total_amount_april,
+                     total_amount_may, total_amount_june, total_amount_july, total_amount_aug,
+                     total_amount_sep, total_amount_oct, total_amount_nov, total_amount_dec]
+            # explode = (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
+            explode = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            explode[cur_month-1] = 0.1
+            # explode = (0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2)
+            fig1, ax1 = plt.subplots()
+            ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
+                    shadow=None, startangle=90, colors=colors_)
+            ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+            plt.title(f'Credit Analysis for {cur_year}', bbox={'facecolor': 'yellow', 'pad': 1})
+            plt.show()
+
+        def bar_m():
+            total_amounts_of_months(cur_year)
+            # here we go!
+            labels = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                      'August', 'September', 'October', 'November', 'December']
+
+            sizes = [total_amount_jan, total_amount_feb, total_amount_march, total_amount_april,
+                     total_amount_may, total_amount_june, total_amount_july, total_amount_aug,
+                     total_amount_sep, total_amount_oct, total_amount_nov, total_amount_dec]
+
+            plt.figure(figsize=(16, 10), dpi=80)
+            plt.bar(labels, sizes, color=colors_)
+            plt.xlabel('Months')
+            plt.ylabel('Credit Amount')
+            plt.title(f'Credit Analysis for {cur_year}', bbox={'facecolor': 'chartreuse', 'pad': 1})
+            plt.show()
+
         def show_ts_ls():  # last 7 days
             """Plotting time series graph"""
-            date_amount_formatting()  # calling the function to use its globalized values
+            date_amount_formatting(cur_year)  # calling the function to use its globalized values
             x = np.array(day_month_list_alpha[-7:])  # getting last 7 values from sorted time format like 28 dec
             list_of_val = []   # empty list to store values of last 7 days
             for items_st in sorted_time[-7:]:    # getting last 7 values from sorted time format like '2020-12-28'
@@ -224,16 +385,18 @@ class KhataBook:
                 plt.xlabel('Days')
                 plt.ylabel('Amount')
                 plt.title('Credit During Last 7 Days')
+                plt.grid(axis='both', alpha=.3)
                 plt.show()
             else:
                 plt.plot(x, y, 'x')   # separate treatment for entries less than 1
                 plt.xlabel('Days')
                 plt.ylabel('Amount')
                 plt.title('Credit During Last 7 Days')
+                plt.grid(axis='both', alpha=.3)
                 plt.show()
 
         def show_ts_lm():   # last month
-            date_amount_formatting()  # calling the function to use its globalized values
+            date_amount_formatting(cur_year)  # calling the function to use its globalized values
             list_of_indexes = []  # empty list to store values of indexes at which we got current month date
             current_month_list = []  # empty list to store current month dates using above list
             for indexes in range(0, len(month_list)):  # range function to get indexes at which we got current month
@@ -257,93 +420,23 @@ class KhataBook:
             x = np.array(current_month_list)
             y = np.array(list(final_dict_.values()))
             if len(x) > 1:
+                plt.figure(figsize=(16, 10), dpi=80)
                 plt.plot(x, y, 'ro', linestyle='solid')
                 plt.xlabel('Days')
                 plt.ylabel('Amount')
                 plt.title('Credit During This Month')
+                plt.grid(axis='both', alpha=.3)
                 plt.show()
             else:
                 plt.plot(x, y, 'x')   # separate treatment for entries less than 1
                 plt.xlabel('Days')
                 plt.ylabel('Amount')
                 plt.title('Credit During This Month')
+                plt.grid(axis='both', alpha=.3)
                 plt.show()
 
-        def amount_for_particular_month(month_in_int):
-            date_amount_formatting()
-            list_of_indexes1 = []
-            pm_month_list = []
-            for indexes in range(0, len(month_list)):
-                if month_list[indexes] == month_int[month_in_int]:
-                    list_of_indexes1.append(indexes)
-
-            for cur_index in list_of_indexes1:
-                pm_month_list.append(day_month_list_alpha[cur_index])
-
-            pm_month_list_ = []
-            # this is for dict values which we gonna use to create y array
-            for cur_index_ in list_of_indexes1:
-                pm_month_list_.append(sorted_time[cur_index_])
-
-            values_for_dict = []
-            for items_ in pm_month_list_:
-                values_for_dict.append(dict_we_want[items_])
-            global final_dict_1
-            final_dict_1 = dict(zip(pm_month_list_, values_for_dict))
-            return final_dict_1
-
-        def pie_m():
-            date_amount_formatting()
-            """Now we have to get all month's date like we did above for just cur month"""
-            # _______________________________________for january
-            amount_for_particular_month(1)
-            dict_of_values_for_jan = final_dict_1
-            total_amount_jan = sum(list(dict_of_values_for_jan.values()))
-            # _______________________________________for february
-            amount_for_particular_month(2)
-            dict_of_values_for_feb = final_dict_1
-            total_amount_feb = sum(list(dict_of_values_for_feb.values()))
-            # _______________________________________for march
-            amount_for_particular_month(3)
-            dict_of_values_for_march = final_dict_1
-            total_amount_march = sum(list(dict_of_values_for_march.values()))
-            # _______________________________________for april
-            amount_for_particular_month(4)
-            dict_of_values_for_april = final_dict_1
-            total_amount_april = sum(list(dict_of_values_for_april.values()))
-            # _______________________________________for may
-            amount_for_particular_month(5)
-            dict_of_values_for_may = final_dict_1
-            total_amount_may = sum(list(dict_of_values_for_may.values()))
-            # _______________________________________for june
-            amount_for_particular_month(6)
-            dict_of_values_for_june = final_dict_1
-            total_amount_june = sum(list(dict_of_values_for_june.values()))
-            # _______________________________________for july
-            amount_for_particular_month(7)
-            dict_of_values_for_july = final_dict_1
-            total_amount_july = sum(list(dict_of_values_for_july.values()))
-            # _______________________________________for august
-            amount_for_particular_month(8)
-            dict_of_values_for_aug = final_dict_1
-            total_amount_aug = sum(list(dict_of_values_for_aug.values()))
-            # _______________________________________for september
-            amount_for_particular_month(9)
-            dict_of_values_for_sep = final_dict_1
-            total_amount_sep = sum(list(dict_of_values_for_sep.values()))
-            # _______________________________________for october
-            amount_for_particular_month(10)
-            dict_of_values_for_oct = final_dict_1
-            total_amount_oct = sum(list(dict_of_values_for_oct.values()))
-            # _______________________________________for november
-            amount_for_particular_month(11)
-            dict_of_values_for_nov = final_dict_1
-            total_amount_nov = sum(list(dict_of_values_for_nov.values()))
-            # _______________________________________for december
-            amount_for_particular_month(12)
-            dict_of_values_for_dec = final_dict_1
-            total_amount_dec = sum(list(dict_of_values_for_dec.values()))
-
+        def show_ts_ty():
+            total_amounts_of_months(cur_year)
             # here we go!
             labels = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
                       'August', 'September', 'October', 'November', 'December']
@@ -351,81 +444,49 @@ class KhataBook:
             sizes = [total_amount_jan, total_amount_feb, total_amount_march, total_amount_april,
                      total_amount_may, total_amount_june, total_amount_july, total_amount_aug,
                      total_amount_sep, total_amount_oct, total_amount_nov, total_amount_dec]
-            # explode = (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
-            explode = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-            explode[cur_month-1] = 0.1
-            # explode = (0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2)
-            fig1, ax1 = plt.subplots()
-            ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
-                    shadow=None, startangle=90)
-            ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-            plt.title(f'Credit Analysis for {cur_year}', bbox={'facecolor': 'yellow', 'pad': 1})
-            plt.show()
+            """Plotting time series graph"""
+            x = np.array(labels)
+            y = np.array(sizes)
+            if len(x) > 1:
+                plt.figure(figsize=(16, 10), dpi=80)
+                plt.plot(x, y, 'ro', linestyle='solid')
+                plt.xlabel('Months')
+                plt.ylabel('Amount')
+                plt.title('Credit During This Year')
+                plt.grid(axis='both', alpha=.3)
+                plt.show()
+            else:
+                plt.plot(x, y, 'x')   # separate treatment for entries less than 1
+                plt.xlabel('Months')
+                plt.ylabel('Amount')
+                plt.title('Credit During This Year')
+                plt.grid(axis='both', alpha=.3)
+                plt.show()
 
-        def bar_m():              # same as pie_m   just 2 lines difference :)
-            date_amount_formatting()
-            """Now we have to get all month's date like we did above for just cur month"""
-            # _______________________________________for january
-            amount_for_particular_month(1)
-            dict_of_values_for_jan = final_dict_1
-            total_amount_jan = sum(list(dict_of_values_for_jan.values()))
-            # _______________________________________for february
-            amount_for_particular_month(2)
-            dict_of_values_for_feb = final_dict_1
-            total_amount_feb = sum(list(dict_of_values_for_feb.values()))
-            # _______________________________________for march
-            amount_for_particular_month(3)
-            dict_of_values_for_march = final_dict_1
-            total_amount_march = sum(list(dict_of_values_for_march.values()))
-            # _______________________________________for april
-            amount_for_particular_month(4)
-            dict_of_values_for_april = final_dict_1
-            total_amount_april = sum(list(dict_of_values_for_april.values()))
-            # _______________________________________for may
-            amount_for_particular_month(5)
-            dict_of_values_for_may = final_dict_1
-            total_amount_may = sum(list(dict_of_values_for_may.values()))
-            # _______________________________________for june
-            amount_for_particular_month(6)
-            dict_of_values_for_june = final_dict_1
-            total_amount_june = sum(list(dict_of_values_for_june.values()))
-            # _______________________________________for july
-            amount_for_particular_month(7)
-            dict_of_values_for_july = final_dict_1
-            total_amount_july = sum(list(dict_of_values_for_july.values()))
-            # _______________________________________for august
-            amount_for_particular_month(8)
-            dict_of_values_for_aug = final_dict_1
-            total_amount_aug = sum(list(dict_of_values_for_aug.values()))
-            # _______________________________________for september
-            amount_for_particular_month(9)
-            dict_of_values_for_sep = final_dict_1
-            total_amount_sep = sum(list(dict_of_values_for_sep.values()))
-            # _______________________________________for october
-            amount_for_particular_month(10)
-            dict_of_values_for_oct = final_dict_1
-            total_amount_oct = sum(list(dict_of_values_for_oct.values()))
-            # _______________________________________for november
-            amount_for_particular_month(11)
-            dict_of_values_for_nov = final_dict_1
-            total_amount_nov = sum(list(dict_of_values_for_nov.values()))
-            # _______________________________________for december
-            amount_for_particular_month(12)
-            dict_of_values_for_dec = final_dict_1
-            total_amount_dec = sum(list(dict_of_values_for_dec.values()))
-
-            # here we go!
+        def compare_ts_ly():
+            previous_year = cur_year - 1
+            previous_year = 2021
+            total_amounts_of_months(cur_year)
             labels = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
                       'August', 'September', 'October', 'November', 'December']
 
-            sizes = [total_amount_jan, total_amount_feb, total_amount_march, total_amount_april,
-                     total_amount_may, total_amount_june, total_amount_july, total_amount_aug,
-                     total_amount_sep, total_amount_oct, total_amount_nov, total_amount_dec]
+            sizes_cur_year = [total_amount_jan, total_amount_feb, total_amount_march, total_amount_april,
+                              total_amount_may, total_amount_june, total_amount_july, total_amount_aug,
+                              total_amount_sep, total_amount_oct, total_amount_nov, total_amount_dec]
+            x = np.array(labels)
+            y = np.array(sizes_cur_year)
 
-            plt.bar(labels, sizes)
-            plt.xlabel('Months')
-            plt.ylabel('Credit Amount')
-            plt.title(f'Credit Analysis for {cur_year}', bbox={'facecolor': 'chartreuse', 'pad': 1})
+            total_amounts_of_months(previous_year)
+            sizes_previous_year = [total_amount_jan, total_amount_feb, total_amount_march, total_amount_april,
+                                   total_amount_may, total_amount_june, total_amount_july, total_amount_aug,
+                                   total_amount_sep, total_amount_oct, total_amount_nov, total_amount_dec]
+            z = np.array(sizes_previous_year)
+            plt.figure(figsize=(16, 10), dpi=80)
+            plt.plot(x, y, 'ro', linestyle='solid', label=str(cur_year))
+            plt.plot(x, z, 'bo', linestyle='solid', label=str(previous_year))
+            plt.xlabel('Amounts')
+            plt.ylabel('Months')
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
             plt.show()
 
         def add_bad_debt():
@@ -1152,12 +1213,12 @@ class KhataBook:
         file_sub.add_cascade(label="Records", menu=record_sub)  # f1
         record_sub.add_command(label='All (Ctrl-Alt-a)',
                                command=lambda table_name='records': records(table_name))  # f1r1
-        root.bind('<Control-Alt-a>', lambda table_name='records': records(table_name))
+        # root.bind('<Control-Alt-a>', lambda table_name='records': records(table_name))
         record_sub.add_command(label='Bad debts', command=lambda table_name='bad_debts': records(table_name))     # f1r2
         file_sub.add_cascade(label="Save record", menu=save_sub)   # f2
         save_sub.add_command(label='Excel sheet (Ctrl-s)', command=save_xlsx)  # f2r1
         root.bind('<Control-s>', save_xlsx)
-        save_sub.add_command(label='Text file')               # f2r2
+        save_sub.add_command(label='')               # f2r2
         file_sub.add_command(label="Exit", command=lambda screen=root: exit_system(screen))  # f3
 
         main_menu.add_cascade(label="Tools", menu=tool_sub)     # m2
@@ -1179,7 +1240,8 @@ class KhataBook:
         graph_sub.add_cascade(label='Time-Series', menu=hist_sub)      # t3g2
         hist_sub.add_command(label='Last 7 Days', command=show_ts_ls)
         hist_sub.add_command(label='This Month', command=show_ts_lm)
-        hist_sub.add_command(label='Specify*')
+        hist_sub.add_command(label='This Year', command=show_ts_ty)
+        hist_sub.add_command(label='Compare With Last Year', command=compare_ts_ly)
 
         graph_sub.add_cascade(label='Bar Graph', menu=bar_sub)                # t3g1
         bar_sub.add_cascade(label='This Year', command=bar_m)
